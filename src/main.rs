@@ -1,6 +1,7 @@
 use raylib::prelude::*;
 
 mod scene;
+mod utils;
 
 use scene::Scene;
 
@@ -11,17 +12,19 @@ fn main() {
     let (mut rl, thread) = raylib::init()
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("Raytracing Simulator")
+        .vsync()
         .build();
 
     let mut scene: Scene = Scene::new(WINDOW_WIDTH, WINDOW_HEIGHT);
      
     while !rl.window_should_close() {
         let mouse_pos = rl.get_mouse_position();
+        scene.process(mouse_pos);
 
         let mut d = rl.begin_drawing(&thread); 
         d.clear_background(Color::BLACK);
 
-        scene.draw(&mut d, mouse_pos);
+        scene.draw(&mut d);
         draw_text_center(&mut d, "Move circle (the source light) with your mouse!", 12, 36, Color::WHITE);
     }
 }
