@@ -19,10 +19,11 @@ fn main() {
      
     while !rl.window_should_close() {
         let mouse_pos = rl.get_mouse_position();
-        scene.process(mouse_pos);
+        scene.update_light_source_pos(mouse_pos);
 
         let mut d = rl.begin_drawing(&thread); 
         d.clear_background(Color::BLACK);
+        d.draw_fps( 10, 10);
 
         scene.draw(&mut d);
         draw_text_center(&mut d, "Move circle (the source light) with your mouse!", 12, 36, Color::WHITE);
