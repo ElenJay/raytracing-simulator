@@ -18,7 +18,7 @@ struct Ray {
 }
 
 pub struct Scene {
-    objects: Vec<Circle>,
+    obj: Circle,
     light_src: Circle, 
     rays: Vec<Ray>, 
     max_ray_dist: f32, 
@@ -33,7 +33,11 @@ impl Scene {
         let mut ray_angle: f32;
 
         let mut scene: Self = Self {
-            objects: Vec::with_capacity(10),
+            obj: Circle {
+                center: Vector2::new(rng.gen_range(obj_radius..window_width as f32 - obj_radius), rng.gen_range(obj_radius..window_height as f32 - obj_radius)), 
+                radius: obj_radius, 
+                color: Color::LIGHTBLUE, 
+            },
             light_src: Circle {
                 center: Vector2::new(2.0 * light_src_radius, 2.0 * light_src_radius), 
                 radius: light_src_radius, 
@@ -44,11 +48,6 @@ impl Scene {
             scene_size: Vector2::new(window_width as f32, window_height as f32), 
         };
 
-        scene.objects.push(Circle {
-            center: Vector2::new(rng.gen_range(obj_radius..window_width as f32 - obj_radius), rng.gen_range(obj_radius..window_height as f32 - obj_radius)), 
-            radius: obj_radius, 
-            color: Color::LIGHTBLUE, 
-        });
         for i in 0..RAYS_AMOUNT {
             ray_angle = (i as f32 / RAYS_AMOUNT as f32) * 2.0 * PI as f32;
             scene.rays.push(Ray {
@@ -80,9 +79,7 @@ impl Scene {
             }, ray.pos, Color::YELLOW);
         }
         
-        for item in self.objects.iter() {
-            d.draw_circle_v(item.center, item.radius, item.color);
-        }
+        d.draw_circle_v(self.obj.center, self.obj.radius, self.obj.color);
     }
 
     // Private methods
@@ -91,10 +88,8 @@ impl Scene {
         if pos.x < 0.0 || pos.x > self.scene_size.x || pos.y < 0.0 || pos.y > self.scene_size.y {
             return true;
         }
-        for item in self.objects.iter() {
-            if hypot_v(pos, item.center) <= self.light_src.radius + item.radius {
-                return true;
-            }
+        if hypot_v(pos, self.obj.center) <= self.light_src.radius + self.obj.radius {
+            return true;
         }
         return false;
     }
@@ -104,25 +99,23 @@ impl Scene {
         let mut dist: f32;
 
         for ray in self.rays.iter_mut() {
-            for obj in self.objects.iter() {
-                dist_pline = Self::get_point_paline_distance_v(obj.center, ray.pos, ray.angle);
-                if dist_pline < obj.radius {
-                    dist = hypot_v(self.light_src.center, obj.center) - obj.radius;
-                    if hypot_v(Vector2 {
-                        x: dist * f32::cos(ray.angle) + self.light_src.center.x,
-                        y: dist * f32::sin(ray.angle) + self.light_src.center.y,
-                    }, obj.center) > dist + obj.radius {
-                        dist = self.max_ray_dist
-                    } else {
-                        dist = ((dist + obj.radius).powi(2) - dist_pline.powi(2)).sqrt() - (obj.radius.powi(2) - dist_pline.powi(2)).sqrt()
-                    }
+            dist_pline = Self::get_point_paline_distance_v(self.obj.center, ray.pos, ray.angle);
+            if dist_pline < self.obj.radius {
+                dist = hypot_v(self.light_src.center, self.obj.center) - self.obj.radius;
+                if hypot_v(Vector2 {
+                    x: dist * f32::cos(ray.angle) + self.light_src.center.x,
+                    y: dist * f32::sin(ray.angle) + self.light_src.center.y,
+                }, self.obj.center) > dist + self.obj.radius {
+                    dist = self.max_ray_dist
                 } else {
-                    dist = self.max_ray_dist;
+                    dist = ((dist + self.obj.radius).powi(2) - dist_pline.powi(2)).sqrt() - (self.obj.radius.powi(2) - dist_pline.powi(2)).sqrt()
                 }
-                
-                ray.pos.x = dist * f32::cos(ray.angle) + self.light_src.center.x;
-                ray.pos.y = dist * f32::sin(ray.angle) + self.light_src.center.y;
+            } else {
+                dist = self.max_ray_dist;
             }
+            
+            ray.pos.x = dist * f32::cos(ray.angle) + self.light_src.center.x;
+            ray.pos.y = dist * f32::sin(ray.angle) + self.light_src.center.y;
         }
     }
 
